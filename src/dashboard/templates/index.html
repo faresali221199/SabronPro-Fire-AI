@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SabronPro Fire AI - NextGen Touch Kiosk</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-surface: #111827;
+            --bg-card: rgba(17, 24, 39, 0.85);
+            --border-glow: rgba(59, 130, 246, 0.3);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            
+            --sabron-blue: #0284c7;
+            --sabron-orange: #f97316;
+            --danger-red: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.5);
+            --success-green: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.4);
+            --warning-amber: #f59e0b;
+            
+            /* Zone Colors matching the Physical Hardware Board */
+            --z1-color: #38bdf8; /* Smoke: Cyan/Blue */
+            --z2-color: #ef4444; /* Fixed Heat: Red */
+            --z3-color: #10b981; /* Rate of Rise: Green */
+            --z4-color: #f97316; /* Multi-Sensor: Orange */
+            --z5-color: #b91c1c; /* MCP: Crimson Red */
+            --z6-color: #a855f7; /* Beam: Purple */
+            --z7-color: #eab308; /* Flame: Yellow/Gold */
+            --z8-color: #06b6d4; /* Gas: Teal */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-main);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Kiosk Header */
+        .kiosk-header {
+            height: 60px;
+            background: linear-gradient(180deg, #162032 0%, #0d1522 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--sabron-blue) 0%, var(--sabron-orange) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.2rem;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(2, 132, 199, 0.5);
+        }
+
+        .brand-title h1 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            background: linear-gradient(90deg, #38bdf8, #fdba74);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-title p {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* Physical Hardware LED Mimics */
+        .hardware-leds {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 6px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .led-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .led-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #374151;
+            transition: all 0.3s ease;
+        }
+
+        .led-item.active-green .led-dot {
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981, 0 0 20px #10b981;
+        }
+
+        .led-item.active-red .led-dot {
+            background: #ef4444;
+            box-shadow: 0 0 10px #ef4444, 0 0 20px #ef4444;
+            animation: pulse-led 0.6s infinite alternate;
+        }
+
+        .led-item.active-amber .led-dot {
+            background: #f59e0b;
+            box-shadow: 0 0 10px #f59e0b;
+        }
+
+        @keyframes pulse-led {
+            from { opacity: 0.4; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Main Workspace Grid */
+        .main-workspace {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 14px;
+            padding: 14px;
+            min-height: 0;
+        }
+
+        /* Left Side: Video Viewport & Alert Overlay */
+        .video-viewport {
+            background: #000;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-viewport img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #070a10;
+        }
+
+        /* HUD Live Overlay */
+        .hud-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px;
+        }
+
+        .hud-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .hud-badge {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            font-family: monospace;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hud-alert-banner {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(239, 68, 68, 0.95);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            box-shadow: 0 0 35px rgba(239, 68, 68, 0.8);
+            animation: banner-alarm 0.5s infinite alternate;
+            display: none;
+            z-index: 10;
+        }
+
+        @keyframes banner-alarm {
+            from { transform: translateX(-50%) scale(0.97); opacity: 0.85; }
+            to { transform: translateX(-50%) scale(1.03); opacity: 1; }
+        }
+
+        .hud-hud-corner {
+            width: 24px;
+            height: 24px;
+            border-color: rgba(56, 189, 248, 0.5);
+            border-style: solid;
+            pointer-events: none;
+        }
+
+        /* Right Side: Telemetry & Interactive Cards */
+        .telemetry-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            min-height: 0;
+            padding-right: 4px;
+        }
+
+        .telemetry-panel::-webkit-scrollbar { width: 4px; }
+        .telemetry-panel::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
+
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .card-header h2 {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Big System Status Badge */
+        .system-status-box {
+            text-align: center;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #0f291e;
+            color: #34d399;
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.15);
+        }
+
+        .system-status-box.alarm {
+            background: #450a0a;
+            color: #f87171;
+            border-color: #ef4444;
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.4);
+            animation: pulse-status 0.8s infinite alternate;
+        }
+
+        @keyframes pulse-status {
+            from { box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+            to { box-shadow: 0 0 30px rgba(239, 68, 68, 0.7); }
+        }
+
+        /* Confidence Bars */
+        .meter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .meter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .meter-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .meter-track {
+            height: 10px;
+            background: #1f2937;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .meter-fill {
+            height: 100%;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.2s ease-out;
+        }
+
+        .meter-fill.fire {
+            background: linear-gradient(90deg, #f97316 0%, #ef4444 100%);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        .meter-fill.smoke {
+            background: linear-gradient(90deg, #64748b 0%, #94a3b8 100%);
+            box-shadow: 0 0 8px rgba(148, 163, 184, 0.4);
+        }
+
+        /* 8 Zones Grid - Hardware Matched */
+        .hardware-zones-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .zone-card {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            padding: 8px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.25s ease;
+        }
+
+        .zone-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--zone-theme);
+        }
+
+        .zone-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding-left: 6px;
+        }
+
+        .zone-num {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: var(--zone-theme);
+            text-transform: uppercase;
+        }
+
+        .zone-name {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 95px;
+        }
+
+        .zone-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+        }
+
+        .zone-card.alarm {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: #ef4444;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+            animation: zone-flash 0.6s infinite alternate;
+        }
+
+        .zone-card.alarm .zone-badge {
+            background: #ef4444;
+            color: #fff;
+            box-shadow: 0 0 8px #ef4444;
+        }
+
+        @keyframes zone-flash {
+            from { opacity: 0.8; }
+            to { opacity: 1; }
+        }
+
+        /* Fast Metrics Row */
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .metric-box {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .metric-val {
+            font-size: 1.1rem;
+            font-weight: 800;
+            font-family: monospace;
+            color: #38bdf8;
+        }
+
+        .metric-lbl {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Demo Presenter Controls */
+        .demo-controls-bar {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .sim-btn {
+            flex: 1;
+            padding: 8px 4px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .sim-btn:hover, .sim-btn:active {
+            background: var(--sabron-blue);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(2, 132, 199, 0.5);
+        }
+
+        .sim-btn.fire-btn:hover { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+        .sim-btn.smoke-btn:hover { background: #64748b; box-shadow: 0 0 10px #64748b; }
+
+        /* Kiosk Bottom Nav Bar (Touch Friendly) */
+        .kiosk-footer {
+            height: 52px;
+            background: #0b111e;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 10px;
+            flex-shrink: 0;
+        }
+
+        .nav-tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-tab.active {
+            background: rgba(2, 132, 199, 0.2);
+            color: #38bdf8;
+            border: 1px solid rgba(2, 132, 199, 0.4);
+            box-shadow: 0 0 15px rgba(2, 132, 199, 0.2);
+        }
+
+        .fullscreen-trigger {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .fullscreen-trigger:hover { color: #fff; border-color: #fff; }
+
+        /* Sound Alert Synthesizer */
+        #audioAlert { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Header matching Board Specifications -->
+    <header class="kiosk-header">
+        <div class="brand-section">
+            <div class="brand-logo">🔥</div>
+            <div class="brand-title">
+                <h1>SABRONPRO FIRE AI</h1>
+                <p>AI Vision Detection & Smart Zones System</p>
+            </div>
+        </div>
+
+        <!-- Physical Mimic LEDs -->
+        <div class="hardware-leds">
+            <div id="ledAi" class="led-item active-green">
+                <span class="led-dot"></span>
+                <span>AI Engine</span>
+            </div>
+            <div id="ledCam" class="led-item active-green">
+                <span class="led-dot"></span>
+                <span>Camera</span>
+            </div>
+            <div id="ledSys" class="led-item active-green">
+                <span class="led-dot"></span>
+                <span>System</span>
+            </div>
+            <div id="ledAlarm" class="led-item">
+                <span class="led-dot"></span>
+                <span>Alarm</span>
+            </div>
+            <div id="ledFault" class="led-item">
+                <span class="led-dot"></span>
+                <span>Fault</span>
+            </div>
+        </div>
+
+        <button class="fullscreen-trigger" onclick="toggleKioskMode()">⛶ Fullscreen</button>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="main-workspace">
+        
+        <!-- Video Feed & Real-time HUD -->
+        <section class="video-viewport">
+            <img id="cameraStream" src="/video_feed" alt="Live Camera / AI Inference Stream"
+                 onerror="this.src=''; document.getElementById('cameraFallback').style.display='flex';">
+            
+            <div id="cameraFallback" style="display:none; position:absolute; flex-direction:column; align-items:center; gap:10px; color:#64748b;">
+                <span style="font-size:2rem;">📷</span>
+                <span>Camera Stream Initializing...</span>
+            </div>
+
+            <!-- HUD Overlay Layer -->
+            <div class="hud-overlay">
+                <div class="hud-top-bar">
+                    <div class="hud-badge">
+                        <span>● LIVE STREAM</span>
+                        <span id="resolutionBadge">640×480</span>
+                    </div>
+                    <div class="hud-badge" id="tempFilterBadge">
+                        <span>TEMPORAL CONFIRM: 0/5</span>
+                    </div>
+                </div>
+
+                <!-- Prominent Fire Alert Banner -->
+                <div id="alarmBanner" class="hud-alert-banner">
+                    ⚠️ CRITICAL ALARM: FIRE DETECTED
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                    <div class="hud-badge">
+                        <span>MODEL: YOLOv8n-Fire (Edge-Optimized)</span>
+                    </div>
+                    <div class="hud-badge" id="clockBadge">
+                        00:00:00
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Side: Metrics, Zones, and Presenter Controls -->
+        <aside class="telemetry-panel">
+            
+            <!-- Big System State -->
+            <div id="masterStatusBadge" class="system-status-box">
+                SYSTEM NORMAL
+            </div>
+
+            <!-- Confidence Meters -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🔥 Visual Detection Confidence</h2>
+                </div>
+                <div class="meter-group">
+                    <div class="meter-item">
+                        <div class="meter-label">
+                            <span>Flame / Fire Intensity</span>
+                            <span id="fireConfVal" style="color:#f97316;">0%</span>
+                        </div>
+                        <div class="meter-track">
+                            <div id="fireConfFill" class="meter-fill fire"></div>
+                        </div>
+                    </div>
+                    <div class="meter-item">
+                        <div class="meter-label">
+                            <span>Smoke Density</span>
+                            <span id="smokeConfVal" style="color:#94a3b8;">0%</span>
+                        </div>
+                        <div class="meter-track">
+                            <div id="smokeConfFill" class="meter-fill smoke"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8 Hardware Zones (Matched with Board Colors & Names) -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📍 Monitored Zones (8 Zones)</h2>
+                    <span id="activeZoneCounter" style="font-size:0.7rem; color:#38bdf8; font-weight:700;">0 ACTIVE</span>
+                </div>
+                <div class="hardware-zones-grid" id="zonesContainer">
+                    <!-- Dynamic Zone Elements -->
+                </div>
+            </div>
+
+            <!-- Diagnostics Metrics -->
+            <div class="metrics-row">
+                <div class="metric-box">
+                    <div id="fpsDisplay" class="metric-val">0</div>
+                    <div class="metric-lbl">Inference FPS</div>
+                </div>
+                <div class="metric-box">
+                    <div id="latencyDisplay" class="metric-val">0ms</div>
+                    <div class="metric-lbl">Latency</div>
+                </div>
+            </div>
+
+            <!-- Presenter Scenario Switcher (One-Touch Demo Buttons) -->
+            <div class="card" style="border-color: rgba(2, 132, 199, 0.3);">
+                <div class="card-header">
+                    <h2>🎮 Live Demo Scenario Switcher</h2>
+                </div>
+                <div class="demo-controls-bar">
+                    <button class="sim-btn" onclick="switchScenario('normal')">Normal</button>
+                    <button class="sim-btn fire-btn" onclick="switchScenario('fire')">🔥 Fire</button>
+                    <button class="sim-btn smoke-btn" onclick="switchScenario('smoke')">🌫️ Smoke</button>
+                </div>
+                <div class="demo-controls-bar" style="margin-top: 6px;">
+                    <button class="sim-btn" id="startCamBtn" onclick="toggleBrowserCamera()" style="background: var(--sabron-blue); color: white;">📹 Start Live Camera</button>
+                </div>
+                
+                <!-- Hidden video and canvas for capturing browser camera feed -->
+                <video id="browserVideo" autoplay playsinline style="display:none;"></video>
+                <canvas id="browserCanvas" style="display:none;"></canvas>
+            </div>
+
+        </aside>
+
+    </main>
+
+    <!-- Bottom Touch Navigation (Kiosk Style) -->
+    <footer class="kiosk-footer">
+        <div class="nav-tab active" onclick="setTab(this)">
+            <span>📹</span>
+            <span>Live Vision & Zones</span>
+        </div>
+        <div class="nav-tab" onclick="showEventsModal()">
+            <span>📋</span>
+            <span>Incident Log (<span id="eventCountBadge">0</span>)</span>
+        </div>
+        <div class="nav-tab" onclick="acknowledgeAlarms()">
+            <span>🔕</span>
+            <span>Silence / Reset</span>
+        </div>
+        <div class="nav-tab" onclick="showInfoModal()">
+            <span>ℹ️</span>
+            <span>Hardware Specs</span>
+        </div>
+    </footer>
+
+    <!-- Audio Beeper (Synthesized for Alarm Demo) -->
+    <script>
+        // Zone configuration perfectly matched with the physical training board
+        const BOARD_ZONES = [
+            { id: 1, name: "Smoke Detectors", color: "var(--z1-color)" },
+            { id: 2, name: "Fixed Heat", color: "var(--z2-color)" },
+            { id: 3, name: "Rate of Rise Heat", color: "var(--z3-color)" },
+            { id: 4, name: "Multi-Sensor", color: "var(--z4-color)" },
+            { id: 5, name: "Manual Call Point", color: "var(--z5-color)" },
+            { id: 6, name: "Beam Detectors", color: "var(--z6-color)" },
+            { id: 7, name: "Flame Detectors", color: "var(--z7-color)" },
+            { id: 8, name: "Gas Detectors", color: "var(--z8-color)" }
+        ];
+
+        // Browser Native Camera variables
+        let isCameraActive = false;
+        let stream = null;
+        let frameInterval = null;
+        const videoElement = document.getElementById('browserVideo');
+        const canvasElement = document.getElementById('browserCanvas');
+        const ctx = canvasElement.getContext('2d');
+        const startCamBtn = document.getElementById('startCamBtn');
+
+        async function toggleBrowserCamera() {
+            if (isCameraActive) {
+                // Stop Camera
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                clearInterval(frameInterval);
+                isCameraActive = false;
+                startCamBtn.innerHTML = "📹 Start Live Camera";
+                startCamBtn.style.background = "var(--sabron-blue)";
+                
+                // Clear the backend frame by sending a "stop" signal or just an empty frame
+                fetch('/api/camera_frame', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: null }) // Backend expects an image, so we just stop sending
+                }).catch(e => {});
+                
+                // Switch backend back to normal simulator
+                switchScenario('normal');
+                alert("Live Camera stopped. Returned to internal monitoring.");
+            } else {
+                // Start Camera
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+                    videoElement.srcObject = stream;
+                    
+                    videoElement.onloadedmetadata = () => {
+                        canvasElement.width = videoElement.videoWidth;
+                        canvasElement.height = videoElement.videoHeight;
+                    };
+                    
+                    isCameraActive = true;
+                    startCamBtn.innerHTML = "⏹️ Stop Camera";
+                    startCamBtn.style.background = "var(--danger-red)";
+                    
+                    // Send frame to backend every 100ms (~10 fps for demo stability)
+                    frameInterval = setInterval(sendFrameToBackend, 100);
+                } catch (err) {
+                    alert("Error accessing camera: " + err.message + "\nPlease ensure you granted browser camera permissions.");
+                }
+            }
+        }
+
+        function sendFrameToBackend() {
+            if (!isCameraActive) return;
+            
+            // Draw current video frame to canvas
+            ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+            
+            // Convert to base64 JPEG
+            const dataUrl = canvasElement.toDataURL('image/jpeg', 0.6);
+            
+            // POST to backend for YOLO processing
+            fetch('/api/camera_frame', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: dataUrl })
+            }).catch(e => console.error("Error sending frame:", e));
+        }
+
+        // Render initial zone cards
+        function initializeZoneGrid() {
+
+            const container = document.getElementById('zonesContainer');
+            container.innerHTML = BOARD_ZONES.map(z => `
+                <div class="zone-card" id="zoneCard-${z.id}" style="--zone-theme: ${z.color};">
+                    <div class="zone-info">
+                        <span class="zone-num">ZONE ${z.id}</span>
+                        <span class="zone-name" title="${z.name}">${z.name}</span>
+                    </div>
+                    <span class="zone-badge" id="zoneBadge-${z.id}">NORMAL</span>
+                </div>
+            `).join('');
+        }
+        initializeZoneGrid();
+
+        // Digital Clock
+        setInterval(() => {
+            document.getElementById('clockBadge').textContent = new Date().toLocaleTimeString();
+        }, 1000);
+
+        // Scenario Switcher function
+        function switchScenario(scenarioName) {
+            fetch('/api/simulation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scenario: scenarioName })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Switched scenario:", data);
+            })
+            .catch(err => console.error("Scenario switch error:", err));
+        }
+
+        // Fullscreen Toggle
+        function toggleKioskMode() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+
+        // Audio Alert Synthesizer
+        let audioCtx = null;
+        let alarmBeepInterval = null;
+
+        function playAlarmSound() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // 880Hz
+                osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } catch(e) {}
+        }
+
+        // Main Dashboard Telemetry Poll Loop
+        let consecutiveAlarms = 0;
+        function pollTelemetry() {
+            // Fetch Status
+            fetch('/api/status')
+                .then(r => r.json())
+                .then(data => {
+                    // Master Status Badge
+                    const statusBadge = document.getElementById('masterStatusBadge');
+                    const alarmBanner = document.getElementById('alarmBanner');
+                    const ledAlarm = document.getElementById('ledAlarm');
+                    const ledFault = document.getElementById('ledFault');
+                    const ledCam = document.getElementById('ledCam');
+                    const ledAi = document.getElementById('ledAi');
+
+                    // Update LED states
+                    ledCam.className = 'led-item ' + (data.camera_status === 'ONLINE' ? 'active-green' : 'active-amber');
+                    ledAi.className = 'led-item ' + (data.ai_status === 'RUNNING' ? 'active-green' : 'active-amber');
+
+                    if (data.status === 'ALARM' || data.fire_detected || data.smoke_detected) {
+                        statusBadge.className = 'system-status-box alarm';
+                        statusBadge.textContent = data.fire_detected ? '🔥 CRITICAL: FIRE ALARM' : '🌫️ WARNING: SMOKE DETECTED';
+                        alarmBanner.style.display = 'block';
+                        ledAlarm.className = 'led-item active-red';
+                        ledFault.className = 'led-item';
+                        
+                        consecutiveAlarms = Math.min(5, consecutiveAlarms + 1);
+                        document.getElementById('tempFilterBadge').textContent = `TEMPORAL CONFIRM: ${consecutiveAlarms}/5 (VERIFIED)`;
+                    } else if (data.status === 'FAULT') {
+                        statusBadge.className = 'system-status-box';
+                        statusBadge.style.background = '#451a03';
+                        statusBadge.style.color = '#fbbf24';
+                        statusBadge.textContent = '⚠️ SYSTEM FAULT';
+                        alarmBanner.style.display = 'none';
+                        ledAlarm.className = 'led-item';
+                        ledFault.className = 'led-item active-amber';
+                    } else {
+                        statusBadge.className = 'system-status-box';
+                        statusBadge.style.background = '';
+                        statusBadge.style.color = '';
+                        statusBadge.textContent = 'SYSTEM NORMAL - MONITORING';
+                        alarmBanner.style.display = 'none';
+                        ledAlarm.className = 'led-item';
+                        ledFault.className = 'led-item';
+                        consecutiveAlarms = 0;
+                        document.getElementById('tempFilterBadge').textContent = `TEMPORAL CONFIRM: 0/5`;
+                    }
+
+                    // Confidence Meters
+                    const firePct = Math.round((data.fire_smoothed || data.fire_confidence || 0) * 100);
+                    const smokePct = Math.round((data.smoke_smoothed || data.smoke_confidence || 0) * 100);
+
+                    document.getElementById('fireConfVal').textContent = firePct + '%';
+                    document.getElementById('fireConfFill').style.width = firePct + '%';
+
+                    document.getElementById('smokeConfVal').textContent = smokePct + '%';
+                    document.getElementById('smokeConfFill').style.width = smokePct + '%';
+
+                    // Real-time Metrics
+                    document.getElementById('fpsDisplay').textContent = (data.fps || 0).toFixed(1);
+                    document.getElementById('latencyDisplay').textContent = (data.inference_latency_ms || 0).toFixed(1) + 'ms';
+                })
+                .catch(() => {});
+
+            // Fetch Zones
+            fetch('/api/zones')
+                .then(r => r.json())
+                .then(zones => {
+                    let activeCount = 0;
+                    BOARD_ZONES.forEach(z => {
+                        const zoneData = zones[z.id] || { status: 'NORMAL' };
+                        const card = document.getElementById(`zoneCard-${z.id}`);
+                        const badge = document.getElementById(`zoneBadge-${z.id}`);
+                        
+                        if (zoneData.status === 'ALARM') {
+                            card.className = 'zone-card alarm';
+                            badge.textContent = 'ALARM';
+                            activeCount++;
+                        } else if (zoneData.status === 'FAULT') {
+                            card.className = 'zone-card';
+                            badge.textContent = 'FAULT';
+                        } else {
+                            card.className = 'zone-card';
+                            badge.textContent = 'NORMAL';
+                        }
+                    });
+                    document.getElementById('activeZoneCounter').textContent = `${activeCount} ACTIVE`;
+                })
+                .catch(() => {});
+
+            // Fetch Events count
+            fetch('/api/events')
+                .then(r => r.json())
+                .then(events => {
+                    document.getElementById('eventCountBadge').textContent = events.length || 0;
+                })
+                .catch(() => {});
+        }
+
+        setInterval(pollTelemetry, 400);
+        pollTelemetry();
+
+        function showEventsModal() {
+            fetch('/api/events')
+                .then(r => r.json())
+                .then(events => {
+                    const recent = events.slice(-15).reverse();
+                    const list = recent.map(e => `[${new Date((e.timestamp || 0) * 1000).toLocaleTimeString()}] ${e.event_type} - Zone: ${e.zone_id || 'Global'} (Conf: ${Math.round((e.fire_confidence||0)*100)}%)`).join('\n');
+                    alert(`Recent Alarms & Events:\n\n${list || 'No events recorded yet.'}`);
+                });
+        }
+
+        function showInfoModal() {
+            alert("SabronPro Fire AI Hardware Specs:\n\n- Processor: Raspberry Pi 5 (Quad Cortex-A76)\n- AI Coprocessor: Hailo-8L AI HAT+ (13 TOPS)\n- Camera: 1080p Ultra-Wide AI Vision\n- Control Panel: Dahua HY-C102-8 8-Zone Panel\n- Power: 24V DC Industrial with 2x12V Battery Backup\n- Status: Software v2.0 Kiosk Running.");
+        }
+
+        function acknowledgeAlarms() {
+            switchScenario('normal');
+            alert("Alarm silenced. System returned to NORMAL monitoring state.");
+        }
+
+        function setTab(el) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+        }
+    </script>
+</body>
+</html>
