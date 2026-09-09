@@ -1,0 +1,98 @@
+# SabronPro Fire AI - Zone Configuration
+# Zones correspond to the physical fire alarm training board
+# Coordinates are normalized (0.0-1.0) relative to camera frame
+# Polygons defined as list of [x, y] points
+
+zones:
+  - id: 1
+    name: "Smoke Detectors"
+    detector_type: "smoke"
+    color: [0, 255, 255]  # Yellow (BGR)
+    polygon:
+      - [0.0, 0.0]
+      - [0.25, 0.0]
+      - [0.25, 0.5]
+      - [0.0, 0.5]
+    enabled: true
+
+  - id: 2
+    name: "Fixed Heat Detectors"
+    detector_type: "fixed_heat"
+    color: [0, 0, 255]  # Red (BGR)
+    polygon:
+      - [0.25, 0.0]
+      - [0.5, 0.0]
+      - [0.5, 0.5]
+      - [0.25, 0.5]
+    enabled: true
+
+  - id: 3
+    name: "Rate of Rise Heat Detectors"
+    detector_type: "rate_of_rise"
+    color: [0, 128, 255]  # Orange (BGR)
+    polygon:
+      - [0.5, 0.0]
+      - [0.75, 0.0]
+      - [0.75, 0.5]
+      - [0.5, 0.5]
+    enabled: true
+
+  - id: 4
+    name: "Multi-Sensor Detectors"
+    detector_type: "multi_sensor"
+    color: [255, 0, 255]  # Magenta (BGR)
+    polygon:
+      - [0.75, 0.0]
+      - [1.0, 0.0]
+      - [1.0, 0.5]
+      - [0.75, 0.5]
+    enabled: true
+
+  - id: 5
+    name: "Manual Call Points"
+    detector_type: "manual_call_point"
+    color: [255, 0, 0]  # Blue (BGR)
+    polygon:
+      - [0.0, 0.5]
+      - [0.25, 0.5]
+      - [0.25, 1.0]
+      - [0.0, 1.0]
+    enabled: true
+
+  - id: 6
+    name: "Beam Detectors"
+    detector_type: "beam"
+    color: [0, 255, 0]  # Green (BGR)
+    polygon:
+      - [0.25, 0.5]
+      - [0.5, 0.5]
+      - [0.5, 1.0]
+      - [0.25, 1.0]
+    enabled: true
+
+  - id: 7
+    name: "Flame Detectors"
+    detector_type: "flame"
+    color: [0, 165, 255]  # Orange (BGR)
+    polygon:
+      - [0.5, 0.5]
+      - [0.75, 0.5]
+      - [0.75, 1.0]
+      - [0.5, 1.0]
+    enabled: true
+
+  - id: 8
+    name: "Gas Detectors"
+    detector_type: "gas"
+    color: [255, 255, 0]  # Cyan (BGR)
+    polygon:
+      - [0.75, 0.5]
+      - [1.0, 0.5]
+      - [1.0, 1.0]
+      - [0.75, 1.0]
+    enabled: true
+
+# Default zone settings
+defaults:
+  unknown_zone_id: 0
+  unknown_zone_name: "Unknown"

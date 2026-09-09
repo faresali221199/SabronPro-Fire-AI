@@ -1,0 +1,52 @@
+# SabronPro Fire AI - System Configuration
+
+system:
+  name: "SabronPro Fire AI"
+  version: "0.1.0"
+  environment: "development"  # development, production
+  log_level: "INFO"
+  simulation_mode: false
+
+camera:
+  source: 0  # Camera index, or path to video file, or 'simulation'
+  width: 640
+  height: 480
+  fps: 30
+  retry_interval: 5  # seconds between reconnection attempts
+  max_retries: 10
+
+inference:
+  backend: "pytorch"  
+  model_path: "models/best.pt"
+  model_type: "yolov8"
+  input_size: 640
+  confidence_threshold: 0.35
+  nms_iou_threshold: 0.45
+  device: "cpu"  # cpu, cuda, hailo
+  half_precision: false
+
+dashboard:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+  refresh_rate: 100  # milliseconds
+  show_camera_feed: true
+  touchscreen_mode: false
+
+database:
+  path: "data/events.db"
+  max_events: 100000
+  cleanup_days: 90
+
+logging:
+  level: "INFO"
+  file: "logs/sabronpro.log"
+  max_bytes: 10485760  # 10MB
+  backup_count: 5
+  console: true
+
+health:
+  check_interval: 30  # seconds
+  min_disk_space_mb: 100
+  camera_timeout: 10  # seconds
+  model_load_timeout: 30  # seconds

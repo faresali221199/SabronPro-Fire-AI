@@ -1,0 +1,42 @@
+# SabronPro Fire AI - Decision Engine Configuration
+# IMPORTANT: Never trigger alarm from a single frame
+
+temporal_filter:
+  # Minimum consecutive frames with detection above threshold
+  min_consecutive_frames: 5
+  # Time window in seconds for frame analysis
+  temporal_window_seconds: 3.0
+  # Confidence smoothing (exponential moving average)
+  smoothing_alpha: 0.3
+  # Minimum time between alarms (cooldown)
+  cooldown_seconds: 30.0
+  # Hysteresis: lower threshold to maintain alarm state
+  hysteresis_margin: 0.10
+
+decision:
+  # Confidence thresholds for alarm consideration
+  fire_threshold: 0.70
+  smoke_threshold: 0.65
+  # Combined fire+smoke lowers individual thresholds
+  combined_threshold_reduction: 0.10
+  # Minimum detections in temporal window to confirm
+  min_detections_in_window: 3
+  # Maximum time to confirm alarm (timeout resets)
+  confirmation_timeout_seconds: 10.0
+
+status_levels:
+  - name: "NORMAL"
+    description: "No fire or smoke detected"
+    priority: 0
+  - name: "MONITORING"
+    description: "Potential detection, awaiting confirmation"
+    priority: 1
+  - name: "PRE_ALARM"
+    description: "Detection confirmed, final verification"
+    priority: 2
+  - name: "ALARM"
+    description: "Fire or smoke confirmed"
+    priority: 3
+  - name: "FAULT"
+    description: "System component failure"
+    priority: 4

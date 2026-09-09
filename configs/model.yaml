@@ -1,0 +1,59 @@
+# SabronPro Fire AI - Model Configuration
+
+model:
+  architecture: "yolov8n"
+  pretrained: "yolov8n.pt"
+  num_classes: 2
+  classes:
+    0: "fire"
+    1: "smoke"
+  input_size: 640
+
+training:
+  epochs: 100
+  batch_size: 16
+  image_size: 640
+  optimizer: "AdamW"
+  learning_rate: 0.001
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 3
+  patience: 15  # early stopping patience
+  save_period: 10  # save checkpoint every N epochs
+  workers: 4
+  cache: false  # cache images in RAM
+  cos_lr: true  # cosine learning rate scheduler
+  close_mosaic: 10  # disable mosaic augmentation for last N epochs
+
+augmentation:
+  hsv_h: 0.015  # hue
+  hsv_s: 0.7    # saturation
+  hsv_v: 0.4    # value/brightness
+  degrees: 0.0  # rotation
+  translate: 0.1
+  scale: 0.5
+  shear: 0.0
+  perspective: 0.0
+  flipud: 0.0
+  fliplr: 0.5
+  mosaic: 1.0
+  mixup: 0.1
+  copy_paste: 0.0
+
+evaluation:
+  confidence_threshold: 0.25
+  iou_threshold: 0.45
+  max_detections: 100
+  # Fire safety: prioritize recall over precision
+  primary_metric: "recall"
+  target_fire_recall: 0.95
+  target_smoke_recall: 0.90
+  max_acceptable_false_positive_rate: 0.10
+
+export:
+  format: "onnx"  # onnx, torchscript
+  imgsz: 640
+  opset: 12
+  simplify: true
+  dynamic: false
+  half: false

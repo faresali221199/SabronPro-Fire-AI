@@ -1,0 +1,64 @@
+# SabronPro Fire AI - Sensor Configuration
+# These are simulated sensors for development
+# Real sensors require hardware integration
+
+sensor_types:
+  smoke:
+    name: "Smoke Detector"
+    description: "Optical/ionization smoke detection"
+    zones: [1]
+    simulated: true
+
+  fixed_heat:
+    name: "Fixed Heat Detector"
+    description: "Fixed temperature threshold detector"
+    zones: [2]
+    simulated: true
+    threshold_celsius: 58
+
+  rate_of_rise:
+    name: "Rate of Rise Heat Detector"
+    description: "Detects rapid temperature increase"
+    zones: [3]
+    simulated: true
+    rate_threshold: 8.3  # degrees C per minute
+
+  multi_sensor:
+    name: "Multi-Sensor Detector"
+    description: "Combined smoke and heat detection"
+    zones: [4]
+    simulated: true
+
+  manual_call_point:
+    name: "Manual Call Point"
+    description: "Manual fire alarm activation"
+    zones: [5]
+    simulated: true
+
+  beam:
+    name: "Beam Detector"
+    description: "Infrared beam smoke detection"
+    zones: [6]
+    simulated: true
+
+  flame:
+    name: "Flame Detector"
+    description: "UV/IR flame detection"
+    zones: [7]
+    simulated: true
+
+  gas:
+    name: "Gas Detector"
+    description: "Combustible gas detection"
+    zones: [8]
+    simulated: true
+
+# Sensor fusion weights
+# These are initial values and should be calibrated
+fusion:
+  vision_weight: 0.6
+  sensor_weight: 0.3
+  temporal_weight: 0.1
+  # NOTE: These weights are initial estimates.
+  # They must be calibrated through testing.
+  # Do NOT use these in production without validation.
